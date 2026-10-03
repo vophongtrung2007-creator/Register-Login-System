@@ -36,7 +36,7 @@ namespace Register_Login_System
                 return;
             }
             btnLogin.Enabled = false;
-            btnLogin.Text = "Đang xử lý";
+            btnLogin.Text = "Đang xử lý...";
 
             try
             {

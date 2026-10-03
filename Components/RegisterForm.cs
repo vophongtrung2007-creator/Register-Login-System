@@ -38,7 +38,7 @@ namespace Register_Login_System
             txtPassword.Text = txtPassword.Text.Trim();
             txtConfirmPassword.Text = txtConfirmPassword.Text.Trim();
 
-            // KIỂM TRA THÔNG TIN HỢP LỆ (GIỮ NGUYÊN)
+            //Kiem tra thong tin coi hop le ko
             if (string.IsNullOrWhiteSpace(txtEmail.Text) || !Regex.IsMatch(txtEmail.Text, @"^[^@\s,]+@[^@\s,]+\.[^@\s,]+$"))
             {
                 MessageBox.Show("Mail định dạng sai.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -85,9 +85,7 @@ namespace Register_Login_System
                 txtPassword.Focus();
                 return;
             }
-
-            // --- KẾT NỐI CSDL VÀ BĂM MẬT KHẨU ---
-
+            //Ket noi csdl
             btnRegister.Enabled = false;
             btnRegister.Text = "Đang xử lý...";
 
