@@ -14,5 +14,10 @@ namespace Register_Login_System
         {
             InitializeComponent();
         }
+
+        private void MainApplication_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }

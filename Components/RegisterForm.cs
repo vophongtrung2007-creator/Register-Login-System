@@ -29,16 +29,16 @@ namespace Register_Login_System
 
         }
 
-        private void btnRegister_Click(object sender, EventArgs e)
+        private async void btnRegister_Click(object sender, EventArgs e)
         {
             txtEmail.Focus();
-            
+
             txtEmail.Text = txtEmail.Text.Trim();
             txtUsername.Text = txtUsername.Text.Trim();
             txtPassword.Text = txtPassword.Text.Trim();
             txtConfirmPassword.Text = txtConfirmPassword.Text.Trim();
 
-            //Kiểm tra thông tin hợp lệ
+            // KIỂM TRA THÔNG TIN HỢP LỆ (GIỮ NGUYÊN)
             if (string.IsNullOrWhiteSpace(txtEmail.Text) || !Regex.IsMatch(txtEmail.Text, @"^[^@\s,]+@[^@\s,]+\.[^@\s,]+$"))
             {
                 MessageBox.Show("Mail định dạng sai.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -86,67 +86,44 @@ namespace Register_Login_System
                 return;
             }
 
-            //Tạo người dùng mới
-            Users newUser = new Users
+            // --- KẾT NỐI CSDL VÀ BĂM MẬT KHẨU ---
+
+            btnRegister.Enabled = false;
+            btnRegister.Text = "Đang xử lý...";
+
+            try
             {
-                Email = txtEmail.Text,
-                Username = txtUsername.Text,
-                Password = txtPassword.Text
-            };
+                var ketQuaBam = MatKhau.Tao(txtPassword.Text);
 
-            //File .json lưu vào \bin\Debug\net10.0-windows
-            //File này làm mock csdl
+                bool thanhCong = await DatabaseHelper.TaoNguoiDungMoi(
+                    txtUsername.Text,
+                    ketQuaBam.Bam,
+                    ketQuaBam.Salt,
+                    txtEmail.Text
+                );
 
-            string filePath = "users.json";
-            List<Users> list = new List<Users>();
+                if (!thanhCong)
+                {
+                    MessageBox.Show("Username đã tồn tại.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txtUsername.Focus();
+                }
+                else
+                {
+                    MessageBox.Show("Đăng kí thành công.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            if (File.Exists(filePath))
-            {
-                string oldJson = File.ReadAllText(filePath);
-                List<Users> decodedList = JsonSerializer.Deserialize<List<Users>>(oldJson);
-
-                if (decodedList == null) { list = new List<Users>(); }
-                else { list = decodedList; }
+                    closeRequest = true;
+                    this.Close(); 
+                }
             }
-
-            //Kiểm tra mail, username trùng
-
-            bool duplicateEmail = false;
-            foreach (var u in list)
+            catch (Exception ex)
             {
-                if (u.Email == txtEmail.Text) { duplicateEmail = true; }
+                MessageBox.Show("Lỗi kết nối cơ sở dữ liệu: " + ex.Message, "Lỗi hệ thống", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            bool duplicateUsername = false;
-            foreach (var u in list)
+            finally
             {
-                if (u.Username == txtUsername.Text) { duplicateUsername = true; }
+                btnRegister.Enabled = true;
+                btnRegister.Text = "Đăng ký";
             }
-
-            if (duplicateEmail)
-            {
-                MessageBox.Show("Email đã tồn tại.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                txtEmail.Clear();
-                txtEmail.Focus();
-                return;
-            }
-
-            if (duplicateUsername)
-            {
-                MessageBox.Show("Username đã tồn tại.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                txtUsername.Clear();
-                txtUsername.Focus();
-                return;
-            }
-            list.Add(newUser);
-
-            var option = new JsonSerializerOptions { WriteIndented = true };
-            string jsonString = JsonSerializer.Serialize(list, option);
-            File.WriteAllText(filePath, jsonString);
-
-            MessageBox.Show("Đăng kí thành công.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            closeRequest = true;
-            this.Close();
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
@@ -157,7 +134,6 @@ namespace Register_Login_System
 
         private void RegisterForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            //Thông báo trước khi tắt chương trình
             if (closeRequest || e.CloseReason != CloseReason.UserClosing) { return; }
 
             DialogResult res =

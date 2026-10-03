@@ -6,6 +6,7 @@ namespace Register_Login_System
 {
     public partial class LoginForm : Form
     {
+        
         public LoginForm()
         {
             InitializeComponent();
@@ -16,7 +17,7 @@ namespace Register_Login_System
 
         }
 
-        private void btnLogin_Click(object sender, EventArgs e)
+        private async void btnLogin_Click(object sender, EventArgs e)
         {
             txtUsername.Text = txtUsername.Text.Trim();
             txtPassword.Text = txtPassword.Text.Trim();
@@ -34,56 +35,53 @@ namespace Register_Login_System
                 txtPassword.Focus();
                 return;
             }
+            btnLogin.Enabled = false;
+            btnLogin.Text = "Đang xử lý";
 
-            //File .json lưu vào \bin\Debug\net10.0-windows
-            //File này làm mock csdl
-
-            string filepath = "users.json";
-            bool loginSuccess = false;
-
-            if (File.Exists(filepath))
+            try
             {
-                string jsonContent = File.ReadAllText(filepath);
-                List<Users> list = JsonSerializer.Deserialize<List<Users>>(jsonContent);
+                //  Gọi DatabaseHelper để lấy salt và chuỗi băm từ SQL server
+                var thongTin = await DatabaseHelper.LayThongTinNguoiDung(txtUsername.Text);
 
-                if (list != null)
+                if (thongTin == null)
                 {
-                    foreach (var u in list)
+                    MessageBox.Show("Tài khoản không tồn tại hoặc sai thông tin.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txtPassword.Clear();
+                    txtUsername.Focus();
+                    return;
+                }
+
+                //So sánh
+                bool dungMatKhau = MatKhau.KiemTra(txtPassword.Text, thongTin.Value.Salt, thongTin.Value.MatKhauBam);
+
+                if (dungMatKhau)
+                {
+                    this.Hide();
+
+                    using (var app = new MainApplication())
                     {
-                        if (u.Username == txtUsername.Text && u.Password == txtPassword.Text)
-                        {
-                            loginSuccess = true;
-                            break;
-                        }
+                        app.ShowDialog();
                     }
+
+                    this.Close();
                 }
-            }
-            else
-            {
-                MessageBox.Show("Tài khoản không tồn tại.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            if (loginSuccess)
-            {
-                this.Hide();
-
-                using (var app = new MainApplication())
+                else
                 {
-                    app.ShowDialog();
+                    MessageBox.Show("Tài khoản hoặc mật khẩu sai.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txtPassword.Clear();
+                    txtUsername.Focus();
                 }
-
-                this.Close();
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("Tài khoản hoặc mật khẩu sai.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                txtUsername.Clear();
-                txtPassword.Clear();
-                txtUsername.Focus();
+                MessageBox.Show("Lỗi kết nối cơ sở dữ liệu: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnLogin.Enabled = true;
+                btnLogin.Text = "Đăng nhập";
             }
         }
-
         private void lklbRegister_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             this.Hide();
