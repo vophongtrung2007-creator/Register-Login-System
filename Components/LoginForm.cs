@@ -58,7 +58,7 @@ namespace Register_Login_System
                 {
                     this.Hide();
 
-                    using (var app = new MainApplication())
+                    using (var app = new MainApplication(txtUsername.Text))
                     {
                         app.ShowDialog();
                     }
